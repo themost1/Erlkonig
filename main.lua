@@ -30,16 +30,36 @@ function setUpGame()
 	spawnStartRocks()
 
 	lastRockSpawn = 0
-	horseX = 50
+	startHorseX = 200
+	horseX = startHorseX
+	elfX = -12
+
+	singer = ""
+	theEnd = false
 end
 
 function setUpImages()
 	moon = love.graphics.newImage("graphics/moon.png")
+	darkMoon = love.graphics.newImage("graphics/darkMoon.png")
 	tree = love.graphics.newImage("graphics/tree.png")
 	boy = love.graphics.newImage("graphics/boy.png")
 	father = love.graphics.newImage("graphics/father.png")
+	elf = love.graphics.newImage("graphics/elf.png")
+	spotlight = love.graphics.newImage("graphics/spotlight.png")
+	mountains = love.graphics.newImage("graphics/mountains.png")
+	hills = love.graphics.newImage("graphics/hills.png")
 
 	horseImages = {}
+
+	hillLocs = {}
+	for i = 0, 100 do
+		hillLocs[i+1] = -50 + (hills:getWidth()-65) * i
+	end
+
+	mountainLocs = {}
+	for i = 0, 50 do
+		mountainLocs[i+1] = -50 + (mountains:getWidth() - 65) * i
+	end
 
 	horseBase = "graphics/horse/horse"
 	for i = 0, 7 do
@@ -61,6 +81,7 @@ function love.keypressed(key, scancode, isrepeat)
 		startGame()
 		return
 	elseif paused then
+		song:play()
 		setUpGame()
 		paused = false
 		return
@@ -97,6 +118,43 @@ function handleJump(dt)
 end
 
 function love.update(dt)
+
+	singer = ""
+	if timeElapsed >= 21 and timeElapsed <= 48 then
+		singer = "narrator"
+	elseif timeElapsed >= 54 and timeElapsed <= 61 then
+		singer = "father"
+	elseif timeElapsed >= 62 and timeElapsed <= 75 then
+		singer = "boy"
+	elseif timeElapsed >= 77 and timeElapsed <= 83 then
+		singer = "father"
+	elseif timeElapsed >= 86 and timeElapsed <= 109 then
+		singer = "elf"
+	elseif timeElapsed >= 110 and timeElapsed <= 120 then
+		singer = "boy"
+	elseif timeElapsed >= 121 and timeElapsed <= 129 then
+		singer = "father"
+	elseif timeElapsed >= 131 and timeElapsed <= 146 then
+		singer = "elf"
+	elseif timeElapsed >= 147 and timeElapsed <= 159 then
+		singer = "boy"
+	elseif timeElapsed >= 160 and timeElapsed <= 170 then
+		singer = "father"
+	elseif timeElapsed >= 176 and timeElapsed <= 186 then
+		singer = "elf"
+	elseif timeElapsed >= 187 and timeElapsed <= 198 then
+		singer = "boy"
+	elseif timeElapsed >= 200 and timeElapsed <= 235 then
+		singer = "narrator"
+	end
+
+	if timeElapsed > 235 then
+		theEnd = true
+	end
+	if timeElapsed > 237 then
+		paused = true
+	end
+
 	if (not started) or paused then
 		return
 	end
@@ -129,7 +187,7 @@ function love.update(dt)
 
 	moveLeft(dt)
 
-	checkDeath()
+	--checkDeath()
 
 	if timeElapsed - lastRockSpawn > 1 then
 		attemptRockSpawn()
@@ -145,6 +203,7 @@ function checkDeath()
 		if math.abs(horseCenter - rockCenter) < 70 then
 			if height < rocks[i].height then
 				paused = true
+				song:stop()
 				return
 			end
 		end
@@ -169,9 +228,18 @@ end
 
 
 function moveLeft(dt)
+	horseX = startHorseX - (startHorseX) * timeElapsed/240 * 1.25
 
 	for i = 1, #rocks do
 		rocks[i].x = rocks[i].x - 250*dt
+	end
+
+	for i = 1, #hillLocs do
+		hillLocs[i] = hillLocs[i] - 100 * dt
+	end
+
+	for i = 1, #mountainLocs do
+		mountainLocs[i] = mountainLocs[i] - 50 * dt
 	end
 
 end
@@ -188,7 +256,26 @@ function love.draw()
 
 	--Shader: love.graphics.setShader(myShader) or love.graphics.setShader()
 	--Draw: love.graphics.draw(bg, bgStart, 0, 0, love.graphics.getWidth()/bg:getWidth(), love.graphics.getHeight()/bg:getHeight(), 0, 32)
-	love.graphics.draw(moon, 50, 100, 0, 2, 2, 0, 32)
+	local thisMoon = moon
+	if singer ~= "narrator" then
+		love.graphics.setColor(0.3, 0.3, 0.3)
+		thisMoon = darkMoon
+	end
+	love.graphics.draw(thisMoon, 50, 105, 0, 2.5, 2.5, 0, 32)
+	love.graphics.setColor(0.1, 0.1, 0.1)
+	for i = 1, #mountainLocs do
+		love.graphics.draw(mountains, mountainLocs[i], -200, 0, 1, 1, 0, 32)
+	end
+	love.graphics.setColor(0.15, 0.15, 0.15)
+	for i = 1, #hillLocs do
+		love.graphics.draw(hills, hillLocs[i], 100, 0, 1, 1, 0, 32)
+	end
+
+	--[[if (singer == "narrator") then
+		love.graphics.setColor(0.8, 0.8, 0.2, 1)
+		love.graphics.draw(spotlight, horseX-170, 70, 0, 1, 1, 0, 32)
+		love.graphics.setColor(1,1,1)
+	end]]
 
 	--love.graphics.draw(tree, 50, love.graphics.getHeight(), 0, 4, 4, 0, 32)
 
@@ -206,11 +293,32 @@ function love.draw()
 
 	love.graphics.setColor(0.5, 0.5, 0.42, 1)
 	love.graphics.draw(horseImage, horseX, love.graphics.getHeight()-120-height, 0, 0.7, 0.7, 0, 32)
-	love.graphics.setColor(0.9, 0.9, 0.5)
+
+	if singer == "father" then
+		love.graphics.setColor(0.9, 0.9, 0.5)
+	else
+		love.graphics.setColor(0.5, 0.5, 0.5)
+	end
 	love.graphics.draw(father, horseX+50, love.graphics.getHeight()-195-height, 0, 0.17, 0.17, 0, 32)
-	love.graphics.setColor(0.5, 0.5, 0.5)
-	love.graphics.draw(boy, horseX+30, love.graphics.getHeight()-175-height, 0, 0.25, 0.25, 0, 32)
-	love.graphics.setColor(1,1,1,1)
+	love.graphics.setColor(1,1,1)
+
+	if not theEnd then
+		if singer == "boy" then
+			love.graphics.setColor(0.9, 0.9, 0.5)
+		else
+			love.graphics.setColor(0.5, 0.5, 0.5)
+		end
+		love.graphics.draw(boy, horseX+30, love.graphics.getHeight()-175-height, 0, 0.25, 0.25, 0, 32)
+		love.graphics.setColor(1,1,1)
+
+		if singer == "elf" then
+			love.graphics.setColor(0.8, 0.8, 0.3)
+		else
+			love.graphics.setColor(0.3, 0.3, 0.3)
+		end
+		love.graphics.draw(elf, elfX, love.graphics.getHeight()-300, 0.4, 0.08, 0.08, 0, 32)
+		love.graphics.setColor(1,1,1,1)
+	end
 
 
 end
@@ -226,11 +334,21 @@ function drawStartText()
 end
 
 function drawPausedText()
-	local title = "Oh no! You hit an obstacle!"
+	local title = ""
+	if not theEnd then
+		title = "Oh no! You hit an obstacle!"
+	else
+		title = "The Erlkonig snatched the boy!"
+	end
 	love.graphics.setColor(0.5, 0.1, 0.1, 1)
 	love.graphics.print(title, 50, 100, 0, 2, 2)
 
 	love.graphics.setColor(1,1,1,1)
-	local pausedText = "The Erlkonig will surely catch you now.\n\nPress any key to restart."
+	local pausedText = ""
+	if not theEnd then
+		pausedText = "The Erlkonig will surely catch you now.\n\nPress any key to restart."
+	else
+		pausedText = "You won the game, despite losing the boy.\n\nPress any key to play again."
+	end
 	love.graphics.print(pausedText, 50, 200, 0, 1.5, 1.5)
 end
