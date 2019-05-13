@@ -38,6 +38,11 @@ function setUpGame()
 
 	singer = ""
 	theEnd = false
+	ai = false
+
+	jostle = 0
+
+	starNum = 0
 end
 
 function setUpImages()
@@ -51,6 +56,7 @@ function setUpImages()
 	spotlight = love.graphics.newImage("graphics/spotlight.png")
 	mountains = love.graphics.newImage("graphics/mountains.png")
 	hills = love.graphics.newImage("graphics/hills.png")
+	star = love.graphics.newImage("graphics/star.png")
 
 	horseImages = {}
 
@@ -82,15 +88,22 @@ function love.keypressed(key, scancode, isrepeat)
 
 	if (not started) then
 		startGame()
+
+		if key == "a" then
+			ai = true
+		end
 		return
 	elseif paused then
 		song:play()
 		setUpGame()
 		paused = false
+		if key == "a" then
+			ai = true
+		end
 		return
 	end
 
-	if (height == 0) then
+	if (height == 0) and not ai then
 		jumpTime = 0
 	end
 end
@@ -151,6 +164,20 @@ function love.update(dt)
 		singer = "narrator"
 	end
 
+	--[[starNum = 0
+	if singer == "elf" or singer == "narrator" then
+		local timeInt = timeElapsed - timeElapsed % 0.25
+		timeInt = timeInt * 8
+		if timeInt % 200 == 0 then
+			starNum = 1
+		elseif timeInt % 312 == 0 then
+			starNum = 2
+		elseif timeInt % 418 == 0 then
+			starNum = 3
+		end
+	end]]
+	starNum = 3
+
 	if timeElapsed >= 121 and not treeSpawned then
 		trees[1] = 1000
 		treeSpawned = true
@@ -170,6 +197,11 @@ function love.update(dt)
 	handleJump(dt)
 
 	timeElapsed = timeElapsed + dt
+
+	jostle = (timeElapsed % 1)/16
+	jostle = 0.03 - jostle
+	jostle = math.abs(jostle)
+	jostle = jostle * 300
 
 	local horseTime = timeElapsed % 1
 	horseTime = horseTime * 100
@@ -207,6 +239,13 @@ function checkDeath()
 	for i = 1, #rocks do
 		local horseCenter = horseX + 100
 		local rockCenter = rocks[i].x + 40
+
+		if math.abs(horseCenter - rockCenter) < 100 then
+			if ai and height==0 then
+				jumpTime = 0
+				return
+			end
+		end
 
 		if math.abs(horseCenter - rockCenter) < 70 then
 			if height < rocks[i].height then
@@ -274,6 +313,12 @@ function love.draw()
 		thisMoon = darkMoon
 	end
 	love.graphics.draw(thisMoon, 50, 105, 0, 2.5, 2.5, 0, 32)
+
+	love.graphics.setColor(0.1, 0.1, 0.1)
+	love.graphics.draw(star, 700, 50, 0.2, 0.05, 0.05, 0, 32)
+	love.graphics.draw(star, 400, 200, 0.4, 0.05, 0.05, 0, 32)
+	love.graphics.draw(star, 200, 110, 0.8, 0.05, 0.05, 0, 32)
+
 	love.graphics.setColor(0.1, 0.1, 0.1)
 	for i = 1, #mountainLocs do
 		love.graphics.draw(mountains, mountainLocs[i], -200, 0, 1, 1, 0, 32)
@@ -314,7 +359,7 @@ function love.draw()
 	else
 		love.graphics.setColor(0.5, 0.5, 0.5)
 	end
-	love.graphics.draw(father, horseX+50, love.graphics.getHeight()-195-height, 0, 0.17, 0.17, 0, 32)
+	love.graphics.draw(father, horseX+50, love.graphics.getHeight()-195-height + jostle, 0, 0.17, 0.17, 0, 32)
 	love.graphics.setColor(1,1,1)
 
 	if not theEnd then
@@ -337,7 +382,7 @@ function love.draw()
 	if theEnd then
 		love.graphics.setColor(0.7, 0.3, 0.3)
 	end
-	love.graphics.draw(boy, horseX+30, love.graphics.getHeight()-175-height, 0, 0.25, 0.25, 0, 32)
+	love.graphics.draw(boy, horseX+30, love.graphics.getHeight()-175-height + jostle, 0, 0.25, 0.25, 0, 32)
 	love.graphics.setColor(1,1,1)
 
 
@@ -349,7 +394,7 @@ function drawStartText()
 	love.graphics.print(title, 50, 100, 0, 2, 2)
 
 	love.graphics.setColor(1,1,1,1)
-	local startText = "Press any key to start.\n\nDuring the game, press any key to jump over obstacles.\n\nHelp the father and son escape the Erlkonig!"
+	local startText = "Press a to run the AI, or any other key to play yourself.\n\nWhen playing without AI, press any key to jump over obstacles.\n\nHelp the father and son escape the Erlkonig!"
 	love.graphics.print(startText, 50, 200, 0, 1.5, 1.5)
 end
 
@@ -366,9 +411,9 @@ function drawPausedText()
 	love.graphics.setColor(1,1,1,1)
 	local pausedText = ""
 	if not theEnd then
-		pausedText = "The Erlkonig will surely catch you now.\n\nPress any key to restart."
+		pausedText = "The Erlkonig will surely catch you now.\n\nPress a to start the AI, or any other key to restart."
 	else
-		pausedText = "You won the game, despite losing the boy.\n\nPress any key to play again."
+		pausedText = "You won the game, despite losing the boy.\n\nPress any key to play again; the 'a' key will start the AI."
 	end
-	love.graphics.print(pausedText, 50, 200, 0, 1.5, 1.5)
+	love.graphics.print(pausedText, 50, 190, 0, 1.5, 1.5)
 end
