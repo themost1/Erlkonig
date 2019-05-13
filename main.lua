@@ -28,11 +28,13 @@ function setUpGame()
 
 	rocks = {}
 	spawnStartRocks()
+	trees = {}
+	treeSpawned = false
 
 	lastRockSpawn = 0
 	startHorseX = 200
 	horseX = startHorseX
-	elfX = -12
+	elfX = -170
 
 	singer = ""
 	theEnd = false
@@ -44,7 +46,8 @@ function setUpImages()
 	tree = love.graphics.newImage("graphics/tree.png")
 	boy = love.graphics.newImage("graphics/boy.png")
 	father = love.graphics.newImage("graphics/father.png")
-	elf = love.graphics.newImage("graphics/elf.png")
+	elf = love.graphics.newImage("graphics/elfFrontCrown.png")
+	crown = love.graphics.newImage("graphics/crown.png")
 	spotlight = love.graphics.newImage("graphics/spotlight.png")
 	mountains = love.graphics.newImage("graphics/mountains.png")
 	hills = love.graphics.newImage("graphics/hills.png")
@@ -148,6 +151,11 @@ function love.update(dt)
 		singer = "narrator"
 	end
 
+	if timeElapsed >= 121 and not treeSpawned then
+		trees[1] = 1000
+		treeSpawned = true
+	end
+
 	if timeElapsed > 235 then
 		theEnd = true
 	end
@@ -187,7 +195,7 @@ function love.update(dt)
 
 	moveLeft(dt)
 
-	--checkDeath()
+	checkDeath()
 
 	if timeElapsed - lastRockSpawn > 1 then
 		attemptRockSpawn()
@@ -242,6 +250,10 @@ function moveLeft(dt)
 		mountainLocs[i] = mountainLocs[i] - 50 * dt
 	end
 
+	for i = 1, #trees do
+		trees[i] = trees[i] - 250 * dt
+	end
+
 end
 
 function love.draw()
@@ -277,7 +289,10 @@ function love.draw()
 		love.graphics.setColor(1,1,1)
 	end]]
 
-	--love.graphics.draw(tree, 50, love.graphics.getHeight(), 0, 4, 4, 0, 32)
+	love.graphics.setColor(0.2, 0.24, 0.2)
+	for i = 1, #trees do
+		love.graphics.draw(tree, trees[i], 355, 0, 0.25, 0.25, 0, 32)
+	end
 
 
 	love.graphics.setColor(0.4, 0.4, 0.4, 1)
@@ -303,22 +318,27 @@ function love.draw()
 	love.graphics.setColor(1,1,1)
 
 	if not theEnd then
-		if singer == "boy" then
-			love.graphics.setColor(0.9, 0.9, 0.5)
-		else
-			love.graphics.setColor(0.5, 0.5, 0.5)
-		end
-		love.graphics.draw(boy, horseX+30, love.graphics.getHeight()-175-height, 0, 0.25, 0.25, 0, 32)
-		love.graphics.setColor(1,1,1)
 
 		if singer == "elf" then
 			love.graphics.setColor(0.8, 0.8, 0.3)
 		else
-			love.graphics.setColor(0.3, 0.3, 0.3)
+			love.graphics.setColor(0.4, 0.4, 0.4)
 		end
-		love.graphics.draw(elf, elfX, love.graphics.getHeight()-300, 0.4, 0.08, 0.08, 0, 32)
+		love.graphics.draw(elf, elfX, love.graphics.getHeight()-450, 0.4, 0.5, 0.5, 0, 32)
+		--love.graphics.draw(crown, elfX+220, love.graphics.getHeight()-400, 0.2, 0.07, 0.07, 0, 32)
 		love.graphics.setColor(1,1,1,1)
 	end
+
+	if singer == "boy" then
+		love.graphics.setColor(0.9, 0.9, 0.5)
+	else
+		love.graphics.setColor(0.5, 0.5, 0.5)
+	end
+	if theEnd then
+		love.graphics.setColor(0.7, 0.3, 0.3)
+	end
+	love.graphics.draw(boy, horseX+30, love.graphics.getHeight()-175-height, 0, 0.25, 0.25, 0, 32)
+	love.graphics.setColor(1,1,1)
 
 
 end
@@ -338,7 +358,7 @@ function drawPausedText()
 	if not theEnd then
 		title = "Oh no! You hit an obstacle!"
 	else
-		title = "The Erlkonig snatched the boy!"
+		title = "The Erlkonig killed the boy!"
 	end
 	love.graphics.setColor(0.5, 0.1, 0.1, 1)
 	love.graphics.print(title, 50, 100, 0, 2, 2)
